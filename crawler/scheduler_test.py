@@ -24,29 +24,35 @@ class DomainTest(unittest.TestCase):
 
 
 class SchedulerTest(unittest.TestCase):
-    urlXpto = (urlparse("http://www.xpto.com.br/index.html"), 100000)
-    urlTerra = (urlparse("http://www.terra.com.br/index.html"), 1)
-    urlTerra2 = (urlparse("http://www.terra.com.br/index.html"), 1)
-    urlTerraRep = (urlparse("http://www.terra.com.br/index.html"), 1)
-    urlUOL1 = (urlparse("http://www.uol.com.br/"), 1)
-    urlUOL2 = (urlparse("http://www.uol.com.br/profMax.html"), 1)
-    urlGlobo = (urlparse("http://www.globo.com.br/profMax.html"), 1)
+    urlXpto = (urlparse("https://www.xpto.com.br/index.html"), 100000)
+    urlTerra = (urlparse("https://www.terra.com.br/index.html"), 1)
+    urlTerra2 = (urlparse("https://www.terra.com.br/index.html"), 1)
+    urlTerraRep = (urlparse("https://www.terra.com.br/index.html"), 1)
+    urlUOL1 = (urlparse("https://www.uol.com.br/"), 1)
+    urlUOL2 = (urlparse("https://www.uol.com.br/profMax.html"), 1)
+    urlGlobo = (urlparse("https://www.globo.com.br/profMax.html"), 1)
     MOCK_USER_AGENT = 'azulaoBot'
     TIME_LIMIT = 10
     DEPTH_LIMIT = 3
     SEEDS = []
 
     def setUp(self):
-        self.scheduler = Scheduler(str_usr_agent="xxbot",
-                                   int_page_limit=self.TIME_LIMIT,
-                                   int_depth_limit=self.DEPTH_LIMIT,
+        self.scheduler = Scheduler(usr_agent="xxbot",
+                                   page_limit=self.TIME_LIMIT,
+                                   depth_limit=self.DEPTH_LIMIT,
                                    arr_urls_seeds=self.SEEDS)
 
     def test_init(self):
         arr_str_urls_seeds = ["cnn.com",
                               "www.gq.com.au/", "www.huffingtonpost.com/"]
         arr_urls_seeds = [urlparse(str_url) for str_url in arr_str_urls_seeds]
-        self.assertEqual(3, 3, "Nao foi adicionado as sementes solicitadas")
+        
+        self.scheduler = Scheduler(usr_agent="xxbot",
+                                   page_limit=self.TIME_LIMIT,
+                                   depth_limit=self.DEPTH_LIMIT,
+                                   arr_urls_seeds=arr_urls_seeds)
+        
+        self.assertEqual(len(arr_str_urls_seeds), self.scheduler.page_count, "Nao foi adicionado as sementes solicitadas")
 
     def test_can_add_page(self):
         self.__testCanAddPageWithLongTimeLimit()
@@ -58,9 +64,9 @@ class SchedulerTest(unittest.TestCase):
             self.assertFalse(canAddXpto, msg='A url XPTO não deveria poder ser adicionada')
 
     def __test_existed_domain(self):
-        scheduler_test = Scheduler(str_usr_agent=self.MOCK_USER_AGENT,
-                                   int_page_limit=self.TIME_LIMIT,
-                                   int_depth_limit=self.DEPTH_LIMIT,
+        scheduler_test = Scheduler(usr_agent=self.MOCK_USER_AGENT,
+                                   page_limit=self.TIME_LIMIT,
+                                   depth_limit=self.DEPTH_LIMIT,
                                    arr_urls_seeds=self.SEEDS)
         self.__test_can_add_uol1(scheduler_test)
         self.__add_uol_1(scheduler_test)
@@ -139,7 +145,7 @@ class SchedulerTest(unittest.TestCase):
         self.assertTrue(not bol_not_allowed,
                         f"Não deveria ser permitida requisitar a url {obj_url_not_allowed.geturl()} segundo o robots.txt  do dominio {obj_url_not_allowed.netloc}, porém o método can_fetch_page retornou True")
         self.assertTrue(bol_allowed,
-                        f"Não deveria ser permitida requisitar a url {obj_url_allowed.geturl()} segundo o robots.txt do dominio {obj_url_allowed.netloc}, porém o método can_fetch_page retornou False")
+                        f"Deveria ser permitida requisitar a url {obj_url_allowed.geturl()} segundo o robots.txt do dominio {obj_url_allowed.netloc}, porém o método can_fetch_page retornou False")
 
         # verifica se foi adicionado a globo.com
         self.assertTrue(obj_url_allowed.netloc in self.scheduler.dic_robots_per_domain,

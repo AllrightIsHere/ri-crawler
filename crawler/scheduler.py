@@ -1,3 +1,4 @@
+from time import sleep
 from urllib import robotparser
 from urllib.parse import ParseResult
 
@@ -31,6 +32,10 @@ class Scheduler:
         self.dic_url_per_domain = OrderedDict()
         self.set_discovered_urls = set()
         self.dic_robots_per_domain = {}
+        
+        for seed in arr_urls_seeds:
+            self.add_new_page(seed, 1)
+            
 
     @synchronized
     def count_fetched_page(self) -> None:
@@ -39,44 +44,64 @@ class Scheduler:
         """
         self.page_count += 1
 
+    @synchronized
     def has_finished_crawl(self) -> bool:
         """
         :return: True se finalizou a coleta. False caso contrário.
         """
-        if self.page_count > self.page_limit:
-            return True
-        return False
+        return self.page_count > self.page_limit
 
     @synchronized
     def can_add_page(self, obj_url: ParseResult, depth: int) -> bool:
-        """
-        :return: True caso a profundidade for menor que a maxima e a url não foi descoberta ainda. False caso contrário.
-        """
-        return False
+        return depth < self.depth_limit \
+        and not self.has_finished_crawl() \
+        and not (obj_url.geturl() in self.set_discovered_urls)
 
     @synchronized
     def add_new_page(self, obj_url: ParseResult, depth: int) -> bool:
-        """
-        Adiciona uma nova página
-        :param obj_url: Objeto da classe ParseResult com a URL a ser adicionada
-        :param depth: Profundidade na qual foi coletada essa URL
-        :return: True caso a página foi adicionada. False caso contrário
-        """
-        # https://docs.python.org/3/library/urllib.parse.html
-
-        return False
+        if not self.can_add_page(obj_url, depth):
+            return False
+        
+        domain = Domain(obj_url.hostname, self.TIME_LIMIT_BETWEEN_REQUESTS)
+        if domain not in self.dic_url_per_domain.keys():
+            self.dic_url_per_domain[
+                domain
+            ] = [(obj_url, depth)]
+        else:
+            self.dic_url_per_domain[
+                domain
+            ].append((obj_url, depth))
+        
+        self.count_fetched_page()
+        self.set_discovered_urls.add(obj_url.geturl())
+        return True
 
     @synchronized
     def get_next_url(self) -> tuple:
-        """
-        Obtém uma nova URL por meio da fila. Essa URL é removida da fila.
-        Logo após, caso o servidor não tenha mais URLs, o mesmo também é removido.
-        """
+        
+        for domain in self.dic_url_per_domain.keys():
+            if domain.is_accessible():
+                domain.accessed_now()
+                urls = self.dic_url_per_domain[domain]
+                if len(urls) > 0:
+                    return urls.pop(0)
+                else:
+                    self.dic_url_per_domain.pop(domain)
+                
+        sleep(self.TIME_LIMIT_BETWEEN_REQUESTS)
         return None, None
 
     def can_fetch_page(self, obj_url: ParseResult) -> bool:
-        """
-        Verifica, por meio do robots.txt se uma determinada URL pode ser coletada
-        """
+        domain = Domain(obj_url.hostname, self.TIME_LIMIT_BETWEEN_REQUESTS)
+        
+        if domain not in self.dic_robots_per_domain.keys():
+            new_parser = robotparser.RobotFileParser()
+            new_parser.set_url(f'{obj_url.scheme}://{obj_url.hostname}/robots.txt')
+            
+            new_parser.read()
+            self.dic_robots_per_domain[domain] \
+            = new_parser
+            
+        robots: robotparser.RobotFileParser = self.dic_robots_per_domain[domain]
 
-        return False
+        return robots.can_fetch(self.usr_agent, obj_url.geturl())

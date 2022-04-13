@@ -5,25 +5,26 @@ from threading import Thread
 import requests
 from urllib.parse import urlparse, urljoin, ParseResult
 
+from crawler.scheduler import Scheduler
+
 
 class PageFetcher(Thread):
     def __init__(self, obj_scheduler):
         super().__init__()
-        self.obj_scheduler = obj_scheduler
+        self.obj_scheduler: Scheduler = obj_scheduler
 
     def request_url(self, obj_url: ParseResult) -> Optional[bytes] or None:
         """
         :param obj_url: Instância da classe ParseResult com a URL a ser requisitada.
         :return: Conteúdo em binário da URL passada como parâmetro, ou None se o conteúdo não for HTML
         """
-        
 
         response = requests.get(obj_url.geturl(), {
-          "headers": {
-              "user-agent": self.obj_scheduler.usr_agent
-          }  
+            "headers": {
+                "user-agent": self.obj_scheduler.usr_agent
+            }
         })
-        
+
         return response.content if 'text/html' in response.headers['content-type'] else None
 
     def discover_links(self, obj_url: ParseResult, depth: int, bin_str_content: bytes):
@@ -31,20 +32,33 @@ class PageFetcher(Thread):
         Retorna os links do conteúdo bin_str_content da página já requisitada obj_url
         """
         soup = BeautifulSoup(bin_str_content, features="lxml")
-        for link in soup.select(None):
-            obj_new_url = None
-            new_depth = None
+        for link in soup.select("body a"):
+            obj_new_url = link["href"]
 
-            yield obj_new_url, new_depth
+            if("://" not in obj_new_url):
+                obj_new_url = f'{obj_url.scheme}://{obj_url.hostname}/{obj_new_url}'
+
+            new_depth = depth + 1
+
+            if obj_url.hostname not in obj_new_url:
+                new_depth = 0
+
+            yield urlparse(obj_new_url), new_depth
 
     def crawl_new_url(self):
         """
         Coleta uma nova URL, obtendo-a do escalonador
         """
-        pass
+        base_url, depth = self.obj_scheduler.get_next_url()
+        base_html = self.request_url(base_url)
+        if base_url is not None:
+            print(base_url.geturl())
+            for link, d in self.discover_links(base_url, depth, base_html):
+                self.obj_scheduler.add_new_page(link, d)
 
     def run(self):
         """
         Executa coleta enquanto houver páginas a serem coletadas
         """
-        pass
+        while not self.obj_scheduler.has_finished_crawl():
+            self.crawl_new_url()

@@ -21,7 +21,10 @@ class Domain:
         return hash(self.nam_domain)
 
     def __eq__(self, domain):
-        return self.nam_domain == domain
+        if type(domain) is str:
+            return self.nam_domain == domain
+
+        return self.nam_domain == domain.nam_domain
 
     def __str__(self):
         return self.nam_domain

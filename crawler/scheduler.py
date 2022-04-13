@@ -32,10 +32,9 @@ class Scheduler:
         self.dic_url_per_domain = OrderedDict()
         self.set_discovered_urls = set()
         self.dic_robots_per_domain = {}
-        
+
         for seed in arr_urls_seeds:
             self.add_new_page(seed, 1)
-            
 
     @synchronized
     def count_fetched_page(self) -> None:
@@ -54,14 +53,14 @@ class Scheduler:
     @synchronized
     def can_add_page(self, obj_url: ParseResult, depth: int) -> bool:
         return depth < self.depth_limit \
-        and not self.has_finished_crawl() \
-        and not (obj_url.geturl() in self.set_discovered_urls)
+            and not self.has_finished_crawl() \
+            and not (obj_url.geturl() in self.set_discovered_urls)
 
     @synchronized
     def add_new_page(self, obj_url: ParseResult, depth: int) -> bool:
         if not self.can_add_page(obj_url, depth):
             return False
-        
+
         domain = Domain(obj_url.hostname, self.TIME_LIMIT_BETWEEN_REQUESTS)
         if domain not in self.dic_url_per_domain.keys():
             self.dic_url_per_domain[
@@ -71,37 +70,38 @@ class Scheduler:
             self.dic_url_per_domain[
                 domain
             ].append((obj_url, depth))
-        
+
         self.count_fetched_page()
         self.set_discovered_urls.add(obj_url.geturl())
         return True
 
     @synchronized
     def get_next_url(self) -> tuple:
-        
+
         for domain in self.dic_url_per_domain.keys():
             if domain.is_accessible():
                 domain.accessed_now()
                 urls = self.dic_url_per_domain[domain]
                 if len(urls) > 0:
-                    return urls.pop(0)
+                    return self.dic_url_per_domain[domain].pop(0)
                 else:
                     self.dic_url_per_domain.pop(domain)
-                
+
         sleep(self.TIME_LIMIT_BETWEEN_REQUESTS)
         return None, None
 
     def can_fetch_page(self, obj_url: ParseResult) -> bool:
         domain = Domain(obj_url.hostname, self.TIME_LIMIT_BETWEEN_REQUESTS)
-        
+
         if domain not in self.dic_robots_per_domain.keys():
             new_parser = robotparser.RobotFileParser()
-            new_parser.set_url(f'{obj_url.scheme}://{obj_url.hostname}/robots.txt')
-            
+            new_parser.set_url(
+                f'{obj_url.scheme}://{obj_url.hostname}/robots.txt')
+
             new_parser.read()
             self.dic_robots_per_domain[domain] \
-            = new_parser
-            
+                = new_parser
+
         robots: robotparser.RobotFileParser = self.dic_robots_per_domain[domain]
 
         return robots.can_fetch(self.usr_agent, obj_url.geturl())

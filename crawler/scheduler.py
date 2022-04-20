@@ -48,7 +48,7 @@ class Scheduler:
         """
         :return: True se finalizou a coleta. False caso contrário.
         """
-        return self.page_count > self.page_limit
+        return self.page_count >= self.page_limit
 
     @synchronized
     def can_add_page(self, obj_url: ParseResult, depth: int) -> bool:
@@ -71,7 +71,6 @@ class Scheduler:
                 domain
             ].append((obj_url, depth))
 
-        self.count_fetched_page()
         self.set_discovered_urls.add(obj_url.geturl())
         return True
 
@@ -83,6 +82,7 @@ class Scheduler:
                 domain.accessed_now()
                 urls = self.dic_url_per_domain[domain]
                 if len(urls) > 0:
+                    self.count_fetched_page()
                     return self.dic_url_per_domain[domain].pop(0)
                 else:
                     self.dic_url_per_domain.pop(domain)

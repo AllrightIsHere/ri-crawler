@@ -33,6 +33,9 @@ class PageFetcher(Thread):
         """
         soup = BeautifulSoup(bin_str_content, features="lxml")
         for link in soup.select("body a"):
+            if not link.has_key("href"):
+                continue
+
             obj_new_url = link["href"]
 
             if("://" not in obj_new_url):
@@ -50,15 +53,22 @@ class PageFetcher(Thread):
         Coleta uma nova URL, obtendo-a do escalonador
         """
         base_url, depth = self.obj_scheduler.get_next_url()
-        base_html = self.request_url(base_url)
-        if base_url is not None:
-            print(base_url.geturl())
-            for link, d in self.discover_links(base_url, depth, base_html):
-                self.obj_scheduler.add_new_page(link, d)
+
+        if base_url:
+            base_html = self.request_url(base_url)
+            if base_url:
+                print(f'URL: {base_url.geturl()}')
+                for link, d in self.discover_links(base_url, depth, base_html):
+                    self.obj_scheduler.add_new_page(link, d)
 
     def run(self):
         """
         Executa coleta enquanto houver páginas a serem coletadas
         """
         while not self.obj_scheduler.has_finished_crawl():
-            self.crawl_new_url()
+            try:
+                self.crawl_new_url()
+            except:
+                print('Error')
+
+        print("Morreu")

@@ -23,7 +23,7 @@ class PageFetcher(Thread):
             "headers": {
                 "user-agent": self.obj_scheduler.usr_agent
             }
-        })
+        }, timeout=20)
 
         return response.content if 'text/html' in response.headers['content-type'] else None
 
@@ -31,9 +31,9 @@ class PageFetcher(Thread):
         """
         Retorna os links do conteúdo bin_str_content da página já requisitada obj_url
         """
-        soup = BeautifulSoup(bin_str_content, features="lxml")
+        soup = BeautifulSoup(bin_str_content, "lxml")
         for link in soup.select("body a"):
-            if not link.has_key("href"):
+            if not link.has_attr("href"):
                 continue
 
             obj_new_url = link["href"]
@@ -56,8 +56,9 @@ class PageFetcher(Thread):
 
         if base_url:
             base_html = self.request_url(base_url)
-            if base_url:
+            if base_html is not None:
                 print(f'URL: {base_url.geturl()}')
+                self.obj_scheduler.count_fetched_page()
                 for link, d in self.discover_links(base_url, depth, base_html):
                     self.obj_scheduler.add_new_page(link, d)
 
@@ -65,10 +66,10 @@ class PageFetcher(Thread):
         """
         Executa coleta enquanto houver páginas a serem coletadas
         """
-        while not self.obj_scheduler.has_finished_crawl():
-            try:
+        try:
+            while not self.obj_scheduler.has_finished_crawl():
                 self.crawl_new_url()
-            except:
-                print('Error')
+        except Exception as e:
+            print(f'Error: {e}')
 
         print("Morreu")

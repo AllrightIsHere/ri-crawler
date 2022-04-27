@@ -46,13 +46,14 @@ class SchedulerTest(unittest.TestCase):
         arr_str_urls_seeds = ["cnn.com",
                               "www.gq.com.au/", "www.huffingtonpost.com/"]
         arr_urls_seeds = [urlparse(str_url) for str_url in arr_str_urls_seeds]
-        
+
         self.scheduler = Scheduler(usr_agent="xxbot",
                                    page_limit=self.TIME_LIMIT,
                                    depth_limit=self.DEPTH_LIMIT,
                                    arr_urls_seeds=arr_urls_seeds)
-        
-        self.assertEqual(len(arr_str_urls_seeds), self.scheduler.page_count, "Nao foi adicionado as sementes solicitadas")
+
+        self.assertEqual(len(arr_str_urls_seeds), len(
+            self.scheduler.set_discovered_urls), "Nao foi adicionado as sementes solicitadas")
 
     def test_can_add_page(self):
         self.__testCanAddPageWithLongTimeLimit()
@@ -61,7 +62,8 @@ class SchedulerTest(unittest.TestCase):
     def __testCanAddPageWithLongTimeLimit(self):
         if Scheduler.TIME_LIMIT_BETWEEN_REQUESTS < self.urlXpto[1]:
             canAddXpto = self.scheduler.can_add_page(*self.urlXpto)
-            self.assertFalse(canAddXpto, msg='A url XPTO não deveria poder ser adicionada')
+            self.assertFalse(
+                canAddXpto, msg='A url XPTO não deveria poder ser adicionada')
 
     def __test_existed_domain(self):
         scheduler_test = Scheduler(usr_agent=self.MOCK_USER_AGENT,
@@ -73,20 +75,24 @@ class SchedulerTest(unittest.TestCase):
         self.__test_can_add_uol2(scheduler_test)
 
     def __add_uol_1(self, scheduler_test):
-        domainUol1 = Domain(self.urlUOL1[0].hostname, Scheduler.TIME_LIMIT_BETWEEN_REQUESTS)
+        domainUol1 = Domain(
+            self.urlUOL1[0].hostname, Scheduler.TIME_LIMIT_BETWEEN_REQUESTS)
         scheduler_test.dic_url_per_domain[domainUol1] = [self.urlUOL1]
 
     def __test_can_add_uol1(self, scheduler_test):
-        self.assertTrue(scheduler_test.can_add_page(*self.urlUOL1), msg='A URL do UOL1 deveria poder ser adicionada')
+        self.assertTrue(scheduler_test.can_add_page(*self.urlUOL1),
+                        msg='A URL do UOL1 deveria poder ser adicionada')
 
     def __test_can_add_uol2(self, scheduler_test):
-        self.assertTrue(scheduler_test.can_add_page(*self.urlUOL2), msg='A URL do UOL2 deveria poder ser adicionada')
+        self.assertTrue(scheduler_test.can_add_page(*self.urlUOL2),
+                        msg='A URL do UOL2 deveria poder ser adicionada')
 
     def test_add_remove_page(self):
         self.test_can_add_page()
         # tuplas url,profundidade a serem testadas
 
-        arr_urls = [self.urlXpto, self.urlTerra, self.urlTerraRep, self.urlUOL1, self.urlUOL2, self.urlGlobo]
+        arr_urls = [self.urlXpto, self.urlTerra, self.urlTerraRep,
+                    self.urlUOL1, self.urlUOL2, self.urlGlobo]
 
         # adiciona todas as paginas em ordem
         # "**" faz passar a url e a profundidade
@@ -99,7 +105,6 @@ class SchedulerTest(unittest.TestCase):
             self.assertTrue(len(set_urls) == len(
                 arr), "Existem URLs repetidas na fila!")
 
-
         u1 = self.scheduler.get_next_url()
         u2 = self.scheduler.get_next_url()
         u3 = self.scheduler.get_next_url()
@@ -107,7 +112,8 @@ class SchedulerTest(unittest.TestCase):
         time_first_hit_UOL = datetime.now()
 
         print("Verificação da ordem das URLs...")
-        arr_expected_order = [self.urlTerra[0], self.urlUOL1[0], self.urlGlobo[0]]
+        arr_expected_order = [self.urlTerra[0],
+                              self.urlUOL1[0], self.urlGlobo[0]]
         arr_url_order = [u1[0], u2[0], u3[0]]
         for i, expected_url in enumerate(arr_expected_order):
             self.assertTrue(
@@ -128,7 +134,6 @@ class SchedulerTest(unittest.TestCase):
         print(f"Tempo esperado: {time_wait_seconds} segundos")
         self.assertTrue(time_wait_seconds >= Scheduler.TIME_LIMIT_BETWEEN_REQUESTS,
                         f"O tempo de espera entre as duas requisições do mesmo servidor não foi maior que {Scheduler.TIME_LIMIT_BETWEEN_REQUESTS} (foi {time_wait_seconds} segundos)")
-
 
     def test_can_fetch(self):
         obj_url_not_allowed = urlparse('https://www.globo.com/beta/dasdas')
@@ -158,7 +163,6 @@ class SchedulerTest(unittest.TestCase):
 
         self.assertTrue(
             bol_allowed, f"O mesmo robots.txt não pode ser requisitado duas vezes.")
-
 
 
 if __name__ == "__main__":

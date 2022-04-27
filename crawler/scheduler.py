@@ -82,7 +82,6 @@ class Scheduler:
                 domain.accessed_now()
                 urls = self.dic_url_per_domain[domain]
                 if len(urls) > 0:
-                    self.count_fetched_page()
                     return self.dic_url_per_domain[domain].pop(0)
                 else:
                     self.dic_url_per_domain.pop(domain)

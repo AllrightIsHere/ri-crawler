@@ -71,5 +71,3 @@ class PageFetcher(Thread):
                 self.crawl_new_url()
         except Exception as e:
             print(f'Error: {e}')
-
-        print("Morreu")

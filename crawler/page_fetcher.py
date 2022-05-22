@@ -66,8 +66,9 @@ class PageFetcher(Thread):
         """
         Executa coleta enquanto houver páginas a serem coletadas
         """
-        try:
-            while not self.obj_scheduler.has_finished_crawl():
+        while not self.obj_scheduler.has_finished_crawl():
+            try:
                 self.crawl_new_url()
-        except Exception as e:
-            print(f'Error: {e}')
+            except Exception as e:
+                print(f'Error: {e}')
+        

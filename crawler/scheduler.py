@@ -101,6 +101,6 @@ class Scheduler:
             self.dic_robots_per_domain[domain] \
                 = new_parser
 
-        robots: robotparser.RobotFileParser = self.dic_robots_per_domain[domain]
+        robots: robotparser.RobotFileParser = self.dic_robots_per_domain[domain].copy()
 
         return robots.can_fetch(self.usr_agent, obj_url.geturl())
